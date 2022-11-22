@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[145]:
+# In[1]:
 
 
 import re
@@ -18,13 +18,13 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
 
 
-# In[ ]:
+# In[2]:
 
 
 stop_words = get_stop_words('uk')
 
 
-# In[111]:
+# In[28]:
 
 
 #попередня обробка тексту
@@ -36,7 +36,6 @@ def ClearText(text):
     cleartext = re.sub('\-\s\r\n\s{1,}|\-\s\r\n|\r\n', '', cleartext) 
     #залишаємо лише слова, прибираємо пунктуацію та числа
     cleartext = re.sub('[.,:;_%©?*,!@#$%^&()\d]|[+=]|[[]|[]]|[/]|"|\s{2,}|-', ' ', cleartext) #deleting symbols  
-    remove_digits = str.maketrans('', '', digits)
     #cleartext = cleartext.translate(remove_digits)
     cleartext = cleartext.replace("\\", "")
     cleartext = cleartext.rstrip()
@@ -44,12 +43,12 @@ def ClearText(text):
     cleartext = re.sub(" +", " ", cleartext)
     #ділимо речення на список слів, розбиваємо по пробілам
     cleartext = re.split(" ", cleartext)
-    #лематизація слів
-    cleartext = [simplemma.lemmatize(word, lang='uk') for word in cleartext]
     #прибираємо стопслова
     cleartext = [word for word in cleartext if word not in stop_words]
     #прибираємо слова, довжина який менше 3 букв
     cleartext = [word for word in cleartext if len(word) > 3]
+    #лематизація слів
+    cleartext = [simplemma.lemmatize(word, lang='uk') for word in cleartext]
     return ' '.join(cleartext)
 
 
@@ -67,20 +66,35 @@ df_test = pd.read_excel('C:/Users/helen/OneDrive/Рабочий стол/пар�
 df_train.head()
 
 
-# In[112]:
+# In[59]:
+
+
+df = pd.read_excel('C:/Users/helen/OneDrive/Рабочий стол/пары/NLP_all.xlsx')
+df = df.sample(frac=1) 
+df
+
+
+# In[60]:
+
+
+df_train = df.iloc [:round(df.shape[0]*0.75)]
+df_test = df.iloc [round(df.shape[0]*0.75):]
+
+
+# In[61]:
 
 
 df_train['ClearText'] = df_train.apply(lambda x: ClearText(x['Comment']), axis=1)
 df_test['ClearText'] = df_test.apply(lambda x: ClearText(x['Comment']), axis=1)
 
 
-# In[115]:
+# In[27]:
 
 
-df_train
+df_test
 
 
-# In[124]:
+# In[62]:
 
 
 count_vect = CountVectorizer()
@@ -91,7 +105,7 @@ X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
 # # MultinomialNB
 
-# In[128]:
+# In[63]:
 
 
 text_clf = Pipeline([('vect', CountVectorizer()),
@@ -101,7 +115,7 @@ text_clf = Pipeline([('vect', CountVectorizer()),
 text_clf = text_clf.fit(df_train['ClearText'], df_train['Category'])
 
 
-# In[131]:
+# In[64]:
 
 
 predicted = text_clf.predict(df_test['ClearText'])
@@ -110,7 +124,7 @@ np.mean(predicted == df_test['Category'])
 
 # # SVM
 
-# In[140]:
+# In[65]:
 
 
 text_clf_svm = Pipeline([('vect', CountVectorizer()),
@@ -120,14 +134,14 @@ text_clf_svm = Pipeline([('vect', CountVectorizer()),
 train_svm = text_clf_svm.fit(df_train['ClearText'], df_train['Category'])
 
 
-# In[141]:
+# In[66]:
 
 
 predicted_svm = text_clf_svm.predict(df_test['ClearText'])
 np.mean(predicted_svm == df_test['Category'])
 
 
-# In[143]:
+# In[67]:
 
 
 predicted_svm
@@ -135,7 +149,7 @@ predicted_svm
 
 # # LogisticRegression
 
-# In[146]:
+# In[68]:
 
 
 text_clf_log_reg = Pipeline([('vect', CountVectorizer()),
@@ -145,10 +159,31 @@ text_clf_log_reg = Pipeline([('vect', CountVectorizer()),
 train_log_reg = text_clf_log_reg.fit(df_train['ClearText'], df_train['Category'])
 
 
-# In[147]:
+# In[72]:
 
 
 predicted_log_reg = text_clf_log_reg.predict(df_test['ClearText'])
 np.mean(predicted_log_reg == df_test['Category'])
+
+
+# In[70]:
+
+
+predicted_log_reg
+
+
+# In[88]:
+
+
+predicted_log_reg_df = pd.DataFrame(predicted_log_reg, columns=['predictions'])
+df_test.index = range(0, df_test.shape[0])
+result = pd.concat([predicted_log_reg_df, df_test], axis=1)
+result.to_csv('C:/Users/helen/OneDrive/Рабочий стол/пары/prediction.csv')
+result
+
+
+# In[84]:
+
+
 
 
