@@ -24,7 +24,7 @@ from sklearn.linear_model import LogisticRegression
 stop_words = get_stop_words('uk')
 
 
-# In[28]:
+# In[3]:
 
 
 #попередня обробка тексту
@@ -52,13 +52,13 @@ def ClearText(text):
     return ' '.join(cleartext)
 
 
-# In[97]:
+# In[4]:
 
 
 print(stop_words)
 
 
-# In[74]:
+# In[5]:
 
 
 df_train = pd.read_excel('C:/Users/helen/OneDrive/Рабочий стол/пары/NLP_train.xlsx')
@@ -66,7 +66,7 @@ df_test = pd.read_excel('C:/Users/helen/OneDrive/Рабочий стол/пар�
 df_train.head()
 
 
-# In[59]:
+# In[41]:
 
 
 df = pd.read_excel('C:/Users/helen/OneDrive/Рабочий стол/пары/NLP_all.xlsx')
@@ -74,27 +74,27 @@ df = df.sample(frac=1)
 df
 
 
-# In[60]:
+# In[42]:
 
 
 df_train = df.iloc [:round(df.shape[0]*0.75)]
 df_test = df.iloc [round(df.shape[0]*0.75):]
 
 
-# In[61]:
+# In[43]:
 
 
 df_train['ClearText'] = df_train.apply(lambda x: ClearText(x['Comment']), axis=1)
 df_test['ClearText'] = df_test.apply(lambda x: ClearText(x['Comment']), axis=1)
 
 
-# In[27]:
+# In[13]:
 
 
 df_test
 
 
-# In[62]:
+# In[44]:
 
 
 count_vect = CountVectorizer()
@@ -124,7 +124,7 @@ np.mean(predicted == df_test['Category'])
 
 # # SVM
 
-# In[65]:
+# In[39]:
 
 
 text_clf_svm = Pipeline([('vect', CountVectorizer()),
@@ -134,7 +134,7 @@ text_clf_svm = Pipeline([('vect', CountVectorizer()),
 train_svm = text_clf_svm.fit(df_train['ClearText'], df_train['Category'])
 
 
-# In[66]:
+# In[40]:
 
 
 predicted_svm = text_clf_svm.predict(df_test['ClearText'])
@@ -149,7 +149,7 @@ predicted_svm
 
 # # LogisticRegression
 
-# In[68]:
+# In[45]:
 
 
 text_clf_log_reg = Pipeline([('vect', CountVectorizer()),
@@ -159,20 +159,32 @@ text_clf_log_reg = Pipeline([('vect', CountVectorizer()),
 train_log_reg = text_clf_log_reg.fit(df_train['ClearText'], df_train['Category'])
 
 
-# In[72]:
+# In[46]:
 
 
 predicted_log_reg = text_clf_log_reg.predict(df_test['ClearText'])
 np.mean(predicted_log_reg == df_test['Category'])
 
 
-# In[70]:
+# In[73]:
+
+
+text_clf_log_reg1 = Pipeline([('vect', CountVectorizer()),
+                      ('tfidf', TfidfTransformer()),
+                      ('clf-svm', LogisticRegression(verbose=1, solver='liblinear',random_state=0, C=20, penalty='l2',  max_iter=1000)),
+])
+train_log_reg1 = text_clf_log_reg1.fit(df_train['ClearText'], df_train['Category'])
+predicted_log_reg1 = text_clf_log_reg1.predict(df_test['ClearText'])
+np.mean(predicted_log_reg1 == df_test['Category'])
+
+
+# In[47]:
 
 
 predicted_log_reg
 
 
-# In[88]:
+# In[48]:
 
 
 predicted_log_reg_df = pd.DataFrame(predicted_log_reg, columns=['predictions'])
@@ -182,7 +194,77 @@ result.to_csv('C:/Users/helen/OneDrive/Рабочий стол/пары/predicti
 result
 
 
-# In[84]:
+# # Metrics
+
+# In[49]:
+
+
+pred_labels = np.asarray(list(result['predictions']))
+true_labels = np.asarray(list(result['Category']))
+
+
+# In[50]:
+
+
+# True Positive (TP): we predict a label of 1 (positive), and the true label is 1.
+TP = np.sum(np.logical_and(pred_labels == 'Toxic', true_labels == 'Toxic'))
+ 
+# True Negative (TN): we predict a label of 0 (negative), and the true label is 0.
+TN = np.sum(np.logical_and(pred_labels == 'Not_Toxic', true_labels == 'Not_Toxic'))
+ 
+# False Positive (FP): we predict a label of 1 (positive), but the true label is 0.
+FP = np.sum(np.logical_and(pred_labels == 'Toxic', true_labels == 'Not_Toxic'))
+ 
+# False Negative (FN): we predict a label of 0 (negative), but the true label is 1.
+FN = np.sum(np.logical_and(pred_labels == 'Not_Toxic', true_labels == 'Toxic'))
+
+
+# In[51]:
+
+
+print('TP = {}, TN = {}, FP = {}, FN = {}'.format(TP, TN, FP, FN))
+
+
+# In[26]:
+
+
+list(true_labels).count('Toxic')
+
+
+# In[27]:
+
+
+list(true_labels).count('Not_Toxic')
+
+
+# In[52]:
+
+
+Precision = TP / (TP + FP)
+Recall = TP / (TP + FN)
+F1_Score = 2 * (Precision * Recall) / (Precision + Recall)
+F1_Score
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
 
 
 
